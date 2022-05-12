@@ -30,13 +30,6 @@
 from qiskit import transpile
 from qiskit import QuantumCircuit, QuantumRegister
 
-
-
-
-
-def mcx(circuit, control1, control2, target):
-    pass
-
 # Init Circuit
 qc = QuantumCircuit()
 q_con = QuantumRegister(14, 'q_c')
@@ -52,8 +45,7 @@ qc.add_register(q_ancilla)
 qc.mcx([q_con[0],q_con[1],q_con[2]],q_ancilla[0])
 qc.mcx([q_con[3],q_con[4],q_con[5]],q_ancilla[1])
 qc.mcx([q_con[6],q_con[7],q_con[8]],q_ancilla[2])
-qc.get_instructions()
-qc.
+
 qc.barrier()
 
 # MCX a0,c9 ,c10 -> a3
@@ -66,7 +58,7 @@ qc.barrier()
 # CCX a3,a4 -> t
 qc.ccx(q_ancilla[3],q_ancilla[4],q_t)
 
-print("total depth is: " + qc.decompose().depth())
+print("total depth is: " , qc.decompose().depth())
 
 qc.decompose().draw()
 
