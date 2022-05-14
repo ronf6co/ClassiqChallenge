@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # Created By  : Ron Cohen
-# Created Date: 11/05/2022
+# Created Date: 14/05/2022
 # ----------------------------------------------------------------------------------------------------------------------
 # BACKGROUND
 # Many quantum operations include multi-controlled Toffoli (MCX) gates.
@@ -64,7 +64,7 @@ def c2x(circuit, q_c0, q_c1, q_t):
 
 
 def c3x(circuit, q_c0, q_c1, q_c2, q_t):
-    """CCCX circuit - the most known efficient way for CCCX
+    """CCCX circuit - using gray code
 
     Parameters:
     q_c0, q_c1, q_c2 : First 2 control qubits
@@ -105,54 +105,65 @@ def c3x(circuit, q_c0, q_c1, q_c2, q_t):
     circuit.h(q_t)
 
 
+def c14x_solution(circuit, q_con, q_target, q_ancilla):
+    """C14X circuit - solution of C14X using 5 ancilla
+    explanation in prints
+
+    Parameters:
+    q_con       : 14 qubits control register
+    q_target    : Target qubit
+    q_ancilla   : 5 ancilla qubits
+   """
+    print("We want to maximize the usage of ancilla")
+    print("First we use the first 3 ancilla with C3X gate "
+          "\nwhich cost only 27 depth (gray code):")
+    print("C3X c0,c1,c2 -> a0")
+    print("C3X c3,c4,c5 -> a1")
+    print("C3X c6,c7,c8 -> a2")
+    c3x(c14x, q_con[0], q_con[1], q_con[2], q_ancilla[0])
+    c3x(c14x, q_con[3], q_con[4], q_con[5], q_ancilla[1])
+    c3x(c14x, q_con[6], q_con[7], q_con[8], q_ancilla[2])
+    # c14x.barrier() - save 0
+    print("\nThan again C3X which is only 27 depth from those "
+          "(2 ancilla)+(left 4 controls) to the remaining ancilla")
+    print("C3X a0,c9 ,c10 -> a3")
+    print("C3X a1,c11,c12 -> a4")
+    c3x(c14x, q_ancilla[0], q_con[9], q_con[10], q_ancilla[3])
+    c3x(c14x, q_ancilla[1], q_con[11], q_con[12], q_ancilla[4])
+    # c14x.barrier() - save 1
+    print("\nThan C2X which is only 11 depth from those 2 ancilla to target")
+    print("C2X a3,a4 -> t")
+    c2x(c14x, q_ancilla[3], q_ancilla[4], q_target)
+
+    print("\nNow only need to return ancilla with performing again in reverse order:")
+    print("C3X a1,c11,c12 -> a4")
+    print("C3X a0,c9 ,c10 -> a3")
+    print("And (order here doesn't matter):")
+    print("C3X c6,c7,c8 -> a2")
+    print("C3X c3,c4,c5 -> a1")
+    print("C3X c0,c1,c2 -> a0")
+    # c14x.barrier() - save 9
+    c3x(c14x, q_ancilla[1], q_con[11], q_con[12], q_ancilla[4])
+    c3x(c14x, q_ancilla[0], q_con[9], q_con[10], q_ancilla[3])
+    # c14x.barrier() - save 10
+    c3x(c14x, q_con[6], q_con[7], q_con[8], q_ancilla[2])
+    c3x(c14x, q_con[3], q_con[4], q_con[5], q_ancilla[1])
+    c3x(c14x, q_con[0], q_con[1], q_con[2], q_ancilla[0])
+
+
 print("____________________________________________________________")
 print("|                        Solution:                         |\n")
 
 print("Init Circuit - 14 Controls, 1 Target, 5 Ancilla\n")
 c14x = QuantumCircuit()
-q_con = QuantumRegister(14, 'q_c')
-q_target = QuantumRegister(1, 'q_t')
-q_ancilla = QuantumRegister(5, 'q_a')
-c14x.add_register(q_con)
-c14x.add_register(q_target)
-c14x.add_register(q_ancilla)
+control_qubits = QuantumRegister(14, 'q_c')
+target_qubit = QuantumRegister(1, 'q_t')
+ancilla_qubits = QuantumRegister(5, 'q_a')
+c14x.add_register(control_qubits)
+c14x.add_register(target_qubit)
+c14x.add_register(ancilla_qubits)
 
-print("We want to maximize the usage of ancilla")
-print("First we use the first 3 ancilla with C3X gate "
-      "\nwhich cost only 27 depth:")
-print("C3X c0,c1,c2 -> a0")
-print("C3X c3,c4,c5 -> a1")
-print("C3X c6,c7,c8 -> a2")
-c3x(c14x, q_con[0], q_con[1], q_con[2], q_ancilla[0])
-c3x(c14x, q_con[3], q_con[4], q_con[5], q_ancilla[1])
-c3x(c14x, q_con[6], q_con[7], q_con[8], q_ancilla[2])
-# c14x.barrier() - save 0
-print("\nThan again C3X which is only 27 depth from those "
-      "(2 ancilla)+(left 4 controls) to the remaining ancilla")
-print("C3X a0,c9 ,c10 -> a3")
-print("C3X a1,c11,c12 -> a4")
-c3x(c14x, q_ancilla[0], q_con[9], q_con[10], q_ancilla[3])
-c3x(c14x, q_ancilla[1], q_con[11], q_con[12], q_ancilla[4])
-# c14x.barrier() - save 1
-print("\nThan C2X which is only 11 depth from those 2 ancilla to target")
-print("C2X a3,a4 -> t")
-c2x(c14x, q_ancilla[3], q_ancilla[4], q_target)
-
-print("\nNow only need to return ancilla with performing again in reverse order:")
-print("C3X a1,c11,c12 -> a4")
-print("C3X a0,c9 ,c10 -> a3")
-print("And (order here doesn't matter):")
-print("C3X c6,c7,c8 -> a2")
-print("C3X c3,c4,c5 -> a1")
-print("C3X c0,c1,c2 -> a0")
-# c14x.barrier() - save 9
-c3x(c14x, q_ancilla[1], q_con[11], q_con[12], q_ancilla[4])
-c3x(c14x, q_ancilla[0], q_con[9], q_con[10], q_ancilla[3])
-# c14x.barrier() - save 10
-c3x(c14x, q_con[6], q_con[7], q_con[8], q_ancilla[2])
-c3x(c14x, q_con[3], q_con[4], q_con[5], q_ancilla[1])
-c3x(c14x, q_con[0], q_con[1], q_con[2], q_ancilla[0])
-
+c14x_solution(c14x, control_qubits, target_qubit, ancilla_qubits)
 
 print("|________________________________________________________________|\n")
 
@@ -176,3 +187,4 @@ print("__________________________________________________________________")
 print("|                          Circuit:                              |")
 print(c14x.draw(output='text'))
 print("|________________________________________________________________|\n")
+
